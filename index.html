@@ -141,6 +141,88 @@ select.psel:focus { border-color:var(--income); }
 .fade:nth-child(1){animation-delay:.04s}.fade:nth-child(2){animation-delay:.08s}
 .fade:nth-child(3){animation-delay:.12s}.fade:nth-child(4){animation-delay:.16s}
 @keyframes fu{to{opacity:1;transform:translateY(0)}}
+
+/* Clickable rows */
+.clickable { cursor:pointer; transition:background .15s, transform .1s; border-radius:6px; }
+.clickable:hover { background:var(--surface2); transform:translateX(2px); }
+.clickable .bn { text-decoration:underline dotted; text-underline-offset:3px; }
+.click-hint { font-size:9px;color:var(--muted);margin-left:4px;opacity:.6; }
+.ucard.clickable:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.acard.clickable:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); cursor:pointer; }
+
+/* Modal Overlay */
+#modal-overlay {
+  position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);
+  z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;
+  animation:fadeIn .2s ease;
+}
+#modal-overlay.open { display:flex; }
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* Modal Box */
+.modal-box {
+  background:var(--surface);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.18);
+  width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;
+  animation:slideUp .25s cubic-bezier(.34,1.56,.64,1);
+  border:1px solid var(--border);
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+.modal-header {
+  padding:18px 20px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;
+}
+.modal-title { font-size:15px;font-weight:800;letter-spacing:-.3px;line-height:1.3; }
+.modal-subtitle { font-size:11px;color:var(--muted);margin-top:3px;font-weight:500; }
+.modal-close {
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);cursor:pointer;font-size:16px;display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;
+}
+.modal-close:hover { background:var(--expense);color:#fff;border-color:var(--expense); }
+
+.modal-stats {
+  display:flex;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);
+  background:var(--surface2);flex-shrink:0;flex-wrap:wrap;
+}
+.mstat { text-align:center;flex:1;min-width:80px; }
+.mstat-val { font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace; }
+.mstat-lbl { font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-top:2px; }
+
+.modal-body { flex:1;overflow-y:auto;padding:14px 20px 18px; }
+.modal-body::-webkit-scrollbar { width:3px; }
+.modal-body::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
+
+/* Modal transaction row */
+.mtxr {
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border-radius:8px;transition:background .12s;border-bottom:1px solid var(--surface2);
+}
+.mtxr:last-child { border-bottom:none; }
+.mtxr:hover { background:var(--surface2); }
+.mtxr-ico { width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0; }
+.mtxr-info { flex:1;min-width:0; }
+.mtxr-name { font-size:13px;font-weight:600;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.mtxr-meta { font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px; }
+.mtxr-amt { font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap; }
+.mtxr-amt.out { color:var(--expense); }
+.mtxr-amt.in { color:var(--income); }
+.mtxr-amt.neu { color:var(--blue); }
+
+/* Modal empty */
+.modal-empty { text-align:center;padding:40px 20px;color:var(--muted); }
+.modal-empty-ico { font-size:36px;margin-bottom:8px; }
+.modal-empty-txt { font-size:13px;font-weight:500; }
+
+/* Badge in modal */
+.mbadge { display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-right:4px; }
+.mbadge.out { background:#fef2f2;color:var(--expense); }
+.mbadge.in  { background:#ecfdf5;color:var(--income); }
+.mbadge.neu { background:#eff6ff;color:var(--blue); }
+
+/* mini bar in modal */
+.mmbar { height:4px;background:var(--surface2);border-radius:2px;margin-top:6px;overflow:hidden; }
+.mmbar-fill { height:100%;border-radius:2px;transition:width .8s ease; }
 </style>
 </head>
 <body>
@@ -203,6 +285,21 @@ select.psel:focus { border-color:var(--income); }
   <div id="p-ak" style="display:none"></div>
   <div id="p-tx" style="display:none"></div>
 </main>
+
+<!-- Modal Overlay -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Detail</div>
+        <div class="modal-subtitle" id="modal-subtitle"></div>
+      </div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-stats" id="modal-stats" style="display:none"></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
 
 <script>
 // ── CONFIG ──
@@ -463,27 +560,6 @@ function saldoSebelum(){
   return s;
 }
 
-// ── MAIN RENDER ──
-function render(){
-  const bd  = applyFilter();
-  const OUT = bd.filter(r=>r.tipe==="OUT");
-  const IN  = bd.filter(r=>r.tipe==="IN");
-  const tIn = sum(IN), tOut=sum(OUT);
-  const sA  = saldoSebelum();
-  const sZ  = sA+tIn-tOut;
-  const rasio = tIn>0?parseFloat((tOut/tIn*100).toFixed(1)):0;
-  // Label periode untuk judul chart
-  const periodLabel = FILTER.bulan!=="ALL"
-    ? BLN[+FILTER.bulan]+(FILTER.tahun!=="ALL"?" "+FILTER.tahun:"")
-    : (FILTER.tahun!=="ALL" ? "Tahun "+FILTER.tahun : "Semua Periode");
-  renderKPI(tIn,tOut,sA,sZ,rasio,IN.length,OUT.length);
-  renderOV(OUT,IN,tIn,tOut,sA,sZ,rasio,bd,periodLabel);
-  renderSP(OUT,tOut);
-  renderIC(IN,tIn);
-  renderAK(bd,periodLabel);
-  renderTX(bd,OUT,periodLabel);
-}
-
 // ── KPI ──
 function renderKPI(tIn,tOut,sA,sZ,rasio,cIn,cOut){
   const rc=rasio>=80?"#dc2626":rasio>=60?"#d97706":"#059669";
@@ -495,14 +571,217 @@ function renderKPI(tIn,tOut,sA,sZ,rasio,cIn,cOut){
   ].map(k=>`<div class="kpi fade" style="--c:${k.c}"><div class="kico">${k.ico}</div><div class="klbl">${k.lbl}</div><div class="kval">${k.val}</div><div class="ksub">${k.sub}</div></div>`).join("");
 }
 
-// ── OVERVIEW ──
-function renderOV(OUT,IN,tIn,tOut,sA,sZ,rasio,bd,periodLabel){
-  const kd=srt(grp(OUT,"kelompok"));
-  const rc=rasio>=80?"#dc2626":rasio>=60?"#d97706":"#059669";
-  const rl=rasio>=80?"🔴 Bahaya — pengeluaran sangat tinggi":rasio>=60?"🟡 Waspada — mulai perhatikan pengeluaran":"🟢 Sehat — kondisi keuangan baik";
-  const uOut=srt(grp(OUT,"nomor"));
+// ── MODAL SYSTEM ──
+let _modalData = null;
 
-  // Daily map
+function openModal(title, subtitle, rows, type="out") {
+  document.getElementById("modal-title").textContent = title;
+  document.getElementById("modal-subtitle").textContent = subtitle;
+  const statsEl = document.getElementById("modal-stats");
+  const bodyEl  = document.getElementById("modal-body");
+
+  if (!rows || rows.length === 0) {
+    statsEl.style.display = "none";
+    bodyEl.innerHTML = `<div class="modal-empty"><div class="modal-empty-ico">📭</div><div class="modal-empty-txt">Tidak ada transaksi</div></div>`;
+    document.getElementById("modal-overlay").classList.add("open");
+    return;
+  }
+
+  const total  = rows.reduce((s,r)=>s+(parseFloat(r.jumlah)||0),0);
+  const sorted = [...rows].sort((a,b)=>(parseFloat(b.jumlah)||0)-(parseFloat(a.jumlah)||0));
+  const maxAmt = parseFloat(sorted[0]?.jumlah)||1;
+
+  // Stats bar
+  const cats  = [...new Set(rows.map(r=>r.kategori||"?"))].length;
+  const dates = rows.map(r=>toDate(r.tanggal)).filter(Boolean).sort((a,b)=>a-b);
+  const dateRange = dates.length ? `${dates[0].toLocaleDateString("id-ID")} – ${dates[dates.length-1].toLocaleDateString("id-ID")}` : "–";
+  const byKat = {};
+  rows.forEach(r=>{const k=r.kategori||"Lainnya";byKat[k]=(byKat[k]||0)+(parseFloat(r.jumlah)||0);});
+  const topKat = Object.entries(byKat).sort((a,b)=>b[1]-a[1])[0];
+
+  statsEl.innerHTML = [
+    {val: rp(total), lbl: type==="in"?"Total Masuk":"Total Keluar"},
+    {val: rows.length, lbl: "Transaksi"},
+    {val: cats, lbl: "Kategori"},
+    {val: topKat ? topKat[0] : "–", lbl: "Terbesar"},
+  ].map(s=>`<div class="mstat"><div class="mstat-val" style="color:${type==="in"?"var(--income)":type==="neu"?"var(--blue)":"var(--expense)"}">${s.val}</div><div class="mstat-lbl">${s.lbl}</div></div>`).join("");
+  statsEl.style.display = "flex";
+
+  // Category breakdown at top
+  const catEntries = Object.entries(byKat).sort((a,b)=>b[1]-a[1]);
+  let catHtml = "";
+  if (catEntries.length > 1) {
+    catHtml = `<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Per Kategori</div>
+      ${catEntries.slice(0,6).map(([k,v],i)=>`
+        <div style="margin-bottom:7px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:600">${k}</span>
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)">${rp(v)} · ${total>0?(v/total*100).toFixed(0):0}%</span>
+          </div>
+          <div class="mmbar"><div class="mmbar-fill" style="width:${total>0?(v/total*100).toFixed(0):0}%;background:${CLR[i%CLR.length]}"></div></div>
+        </div>`).join("")}
+    </div>`;
+  }
+
+  // Transaction list
+  const txHtml = sorted.map(r => {
+    const d = toDate(r.tanggal);
+    const dateStr = d ? d.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}) : "–";
+    const pct = ((parseFloat(r.jumlah)||0)/maxAmt*100).toFixed(0);
+    const amtClass = type==="in"?"in":type==="neu"?"neu":"out";
+    const sign = type==="in"?"+":type==="neu"?"":"-";
+    const CAT_ICON = {makan:"🍽",transport:"🚗",belanja:"🛍",listrik:"⚡",air:"💧",cicilan:"🏦",kesehatan:"🏥",pendidikan:"📚",hiburan:"🎮",bensin:"⛽",pulsa:"📱",gaji:"💰",transfer:"🔁",lainnya:"📋"};
+    const ico = CAT_ICON[(r.kategori||"").toLowerCase()] || "💳";
+    return `<div class="mtxr">
+      <div class="mtxr-ico" style="background:${type==="in"?"#ecfdf5":type==="neu"?"#eff6ff":"#fef2f2"}">${ico}</div>
+      <div class="mtxr-info">
+        <div class="mtxr-name">${r.keterangan||r.kategori||"–"}</div>
+        <div class="mtxr-meta">${dateStr} · ${r.kategori||""} · ${r.akun?.toUpperCase()||""} · ${uname(r.nomor)}</div>
+        <div class="mmbar" style="margin-top:4px"><div class="mmbar-fill" style="width:${pct}%;background:${type==="in"?"var(--income)":type==="neu"?"var(--blue)":"var(--expense)"}"></div></div>
+      </div>
+      <div class="mtxr-amt ${amtClass}">${sign}${rp(r.jumlah)}</div>
+    </div>`;
+  }).join("");
+
+  bodyEl.innerHTML = catHtml + txHtml;
+  document.getElementById("modal-overlay").classList.add("open");
+  document.getElementById("modal-box").scrollTop = 0;
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById("modal-overlay")) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById("modal-overlay").classList.remove("open");
+}
+document.addEventListener("keydown", e => { if (e.key==="Escape") closeModalDirect(); });
+
+// ── SPENDING ──
+function renderSP(OUT, tot){
+  const cd = srt(grp(OUT,"kategori")).slice(0,12);
+  const kd = srt(grp(OUT,"kelompok"));
+  document.getElementById("p-sp").innerHTML=`
+  <div class="g2" style="margin-bottom:16px"><div class="card full"><div class="chd">Top Kategori Pengeluaran <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px">— klik kategori untuk detail</span></div><canvas id="c-cat" height="78"></canvas></div></div>
+  <div class="g2">
+    <div class="card"><div class="chd">Per Kelompok <span style="font-size:10px;color:var(--muted);font-weight:400">— klik untuk detail</span></div>
+      ${kd.map(([n,v],i)=>`
+        <div class="bi clickable" onclick='showDetailKelompok("${n.replace(/'/g,"\\'")}","OUT")'>
+          <div class="bt"><div class="bn">${n} <span class="click-hint">↗</span></div><div class="bv">${rp(v)} · <span style="color:var(--muted)">${tot>0?(v/tot*100).toFixed(0):0}%</span></div></div>
+          <div class="btr"><div class="bf" style="width:${tot>0?(v/tot*100).toFixed(0):0}%;background:${CLR[i%CLR.length]}"></div></div>
+        </div>`).join("")}
+    </div>
+    <div class="card"><div class="chd">Per Kategori — Detail <span style="font-size:10px;color:var(--muted);font-weight:400">— klik untuk detail</span></div>
+      ${cd.map(([n,v],i)=>`
+        <div class="bi clickable" onclick='showDetailKategori("${n.replace(/'/g,"\\'")}","OUT")'>
+          <div class="bt"><div class="bn" style="color:${CLR[i%CLR.length]}">${n} <span class="click-hint">↗</span></div><div class="bv">${rp(v)}</div></div>
+          <div class="btr"><div class="bf" style="width:${cd[0][1]>0?(v/cd[0][1]*100).toFixed(0):0}%;background:${CLR[i%CLR.length]}"></div></div>
+        </div>`).join("")}
+    </div>
+  </div>`;
+  dc("c-cat");
+  if(cd.length){
+    const chart = new Chart(document.getElementById("c-cat"),{type:"bar",data:{labels:cd.map(([k])=>k),datasets:[{data:cd.map(([,v])=>v),backgroundColor:cd.map((_,i)=>CLR[i%CLR.length]),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>rp(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:"#f1f5f9"},ticks:{callback:v=>fmtK(v),font:{size:11}}}},onClick:(evt,elements)=>{if(elements.length){const idx=elements[0].index;showDetailKategori(cd[idx][0],"OUT");}}}});
+    CHARTS["c-cat"]=chart;
+  }
+}
+
+// ── INCOME ──
+function renderIC(IN, tot){
+  const cd = srt(grp(IN,"kategori"));
+  document.getElementById("p-ic").innerHTML=`
+  <div class="g2">
+    <div class="card"><div class="chd">Sumber Pemasukan <span style="font-size:10px;color:var(--muted);font-weight:400">— klik chart untuk detail</span></div><canvas id="c-inc" height="220"></canvas></div>
+    <div class="card"><div class="chd">Detail Kategori <span style="font-size:10px;color:var(--muted);font-weight:400">— klik untuk detail</span></div>
+      ${cd.map(([n,v],i)=>`
+        <div class="bi clickable" onclick='showDetailKategori("${n.replace(/'/g,"\\'")}","IN")'>
+          <div class="bt"><div class="bn">${n} <span class="click-hint">↗</span></div><div class="bv">${rp(v)} · <span style="color:var(--income)">${tot>0?(v/tot*100).toFixed(1):0}%</span></div></div>
+          <div class="btr"><div class="bf" style="width:${tot>0?(v/tot*100).toFixed(0):0}%;background:${CLR[i%CLR.length]}"></div></div>
+        </div>`).join("")}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+        <span style="font-weight:700;font-size:13px">Total</span>
+        <span style="font-weight:800;font-size:15px;color:var(--income);font-family:'JetBrains Mono',monospace">${rp(tot)}</span>
+      </div>
+    </div>
+  </div>`;
+  dc("c-inc");
+  if(cd.length){
+    const chart = new Chart(document.getElementById("c-inc"),{type:"doughnut",data:{labels:cd.map(([k])=>k),datasets:[{data:cd.map(([,v])=>v),backgroundColor:CLR,borderWidth:0}]},options:{cutout:"60%",plugins:{legend:{position:"bottom",labels:{font:{size:12},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${rp(c.raw)} (${tot>0?(c.raw/tot*100).toFixed(1):0}%)`}}},onClick:(evt,elements)=>{if(elements.length){const idx=elements[0].index;showDetailKategori(cd[idx][0],"IN");}}}});
+    CHARTS["c-inc"]=chart;
+  }
+}
+
+// ── AKUN ──
+function renderAK(bd, periodLabel){
+  const sa = saldoAkun();
+  const aList = Object.entries(sa).filter(([k])=>!k.includes("→")).sort((a,b)=>b[1]-a[1]);
+  const aktB = {};
+  bd.forEach(r=>{const ak=(r.akun||"unknown").toString().toLowerCase().trim();if(!aktB[ak])aktB[ak]={in:0,out:0,n:0};if(r.tipe==="IN"){aktB[ak].in+=parseFloat(r.jumlah)||0;aktB[ak].n++;}if(r.tipe==="OUT"){aktB[ak].out+=parseFloat(r.jumlah)||0;aktB[ak].n++;}});
+  const pindah = bd.filter(r=>r.tipe==="PINDAH");
+  document.getElementById("p-ak").innerHTML=`
+  <div class="g2" style="margin-bottom:16px"><div class="card full">
+    <div class="chd">Saldo Real per Akun (seluruh periode) <span style="font-size:10px;color:var(--muted);font-weight:400">— klik untuk detail transaksi</span></div>
+    <div class="agrid">${aList.map(([ak,sal])=>`
+      <div class="acard clickable" onclick='showDetailAkun("${ak.replace(/'/g,"\\'")}","ALL")'>
+        <div class="aname">${ak}</div>
+        <div class="aval ${sal>=0?"pos":"neg"}">${rpS(sal)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">${sal>=0?"✓ Positif":"⚠ Minus"}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">klik detail ↗</div>
+      </div>`).join("")}
+    </div>
+  </div></div>
+  <div class="g2">
+    <div class="card"><div class="chd">Aktivitas Akun — <span>${periodLabel}</span> <span style="font-size:10px;color:var(--muted);font-weight:400">— klik untuk detail</span></div>
+      ${Object.entries(aktB).filter(([k])=>!k.includes("→")).map(([ak,v])=>`
+        <div class="txr clickable" onclick='showDetailAkun("${ak.replace(/'/g,"\\'")}","PERIOD")'>
+          <div class="txl"><div class="txd" style="background:var(--blue)"></div>
+            <div><div class="txn">${ak.toUpperCase()} <span class="click-hint">↗</span></div><div class="txm">${v.n} transaksi bulan ini</div></div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--income);font-family:'JetBrains Mono',monospace">+${rp(v.in)}</div>
+            <div style="font-size:11px;color:var(--expense);font-family:'JetBrains Mono',monospace">-${rp(v.out)}</div>
+          </div>
+        </div>`).join("")}
+    </div>
+    <div class="card"><div class="chd">Transfer Antar Akun — <span>${periodLabel}</span></div>
+      <div class="txs">${pindah.length===0?`<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Tidak ada transfer bulan ini</div>`:pindah.map(r=>`<div class="txr"><div class="txl"><div class="txd" style="background:var(--blue)"></div><div><div class="txn">🔁 ${r.kategori||r.akun}</div><div class="txm">${toDate(r.tanggal)?.toLocaleDateString("id-ID")||""} · ${r.keterangan||""}</div></div></div><div class="txa p">${rp(r.jumlah)}</div></div>`).join("")}</div>
+    </div>
+  </div>`;
+}
+
+// ── TRANSAKSI ──
+function renderTX(bd, OUT, periodLabel){
+  const all = [...bd].filter(r=>r.tipe!=="PINDAH").sort((a,b)=>{const da=toDate(a.tanggal),db=toDate(b.tanggal);return(db||0)-(da||0);});
+  const top8 = [...OUT].sort((a,b)=>(parseFloat(b.jumlah)||0)-(parseFloat(a.jumlah)||0)).slice(0,8);
+  document.getElementById("p-tx").innerHTML=`
+  <div class="g2">
+    <div class="card"><div class="chd">8 Pengeluaran Terbesar — <span>${periodLabel||""}</span></div>
+      ${top8.map((r,i)=>`<div class="txr clickable" onclick='showDetailSingle(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+        <div class="txl">
+          <div style="width:24px;height:24px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">#${i+1}</div>
+          <div><div class="txn">${r.keterangan||r.kategori} <span class="click-hint">↗</span></div><div class="txm">${toDate(r.tanggal)?.toLocaleDateString("id-ID")||""} · ${r.kategori} · ${r.akun||""} · ${uname(r.nomor)}</div></div>
+        </div>
+        <div class="txa o">-${rp(r.jumlah)}</div>
+      </div>`).join("")}
+    </div>
+    <div class="card"><div class="chd">Semua Transaksi <span>(${all.length})</span></div>
+      <div class="txs">${all.map(r=>`<div class="txr clickable" onclick='showDetailKategori("${(r.kategori||"Lainnya").replace(/'/g,"\\'")}","${r.tipe==="IN"?"IN":"OUT"}")'>
+        <div class="txl"><div class="txd" style="background:${r.tipe==="IN"?"var(--income)":"var(--expense)"}"></div>
+          <div><div class="txn">${r.keterangan||r.kategori} <span class="click-hint">↗</span></div><div class="txm">${toDate(r.tanggal)?.toLocaleDateString("id-ID")||""} · ${r.kategori} · ${uname(r.nomor)}</div></div>
+        </div>
+        <div class="txa ${r.tipe==="IN"?"i":"o"}">${r.tipe==="IN"?"+":"-"}${rp(r.jumlah)}</div>
+      </div>`).join("")}</div>
+    </div>
+  </div>`;
+}
+
+// ── OVERVIEW ──
+function renderOV(OUT, IN, tIn, tOut, sA, sZ, rasio, bd, periodLabel){
+  const kd = srt(grp(OUT,"kelompok"));
+  const rc = rasio>=80?"#dc2626":rasio>=60?"#d97706":"#059669";
+  const rl = rasio>=80?"🔴 Bahaya — pengeluaran sangat tinggi":rasio>=60?"🟡 Waspada — mulai perhatikan pengeluaran":"🟢 Sehat — kondisi keuangan baik";
+  const uOut = srt(grp(OUT,"nomor"));
+
   const dm={};
   bd.forEach(r=>{const d=toDate(r.tanggal);if(!d)return;const k=d.toISOString().slice(0,10);if(!dm[k])dm[k]={in:0,out:0};if(r.tipe==="IN")dm[k].in+=parseFloat(r.jumlah)||0;if(r.tipe==="OUT")dm[k].out+=parseFloat(r.jumlah)||0;});
   const days=Object.keys(dm).sort();
@@ -519,7 +798,7 @@ function renderOV(OUT,IN,tIn,tOut,sA,sZ,rasio,bd,periodLabel){
   </div></div>
   <div class="g3">
     <div class="card">
-      <div class="chd">Komposisi Kelompok</div>
+      <div class="chd">Komposisi Kelompok <span style="font-size:10px;font-weight:400;color:var(--muted)">— klik chart</span></div>
       <canvas id="c-pie" height="195"></canvas>
     </div>
     <div class="card">
@@ -531,32 +810,110 @@ function renderOV(OUT,IN,tIn,tOut,sA,sZ,rasio,bd,periodLabel){
         <div class="gsc"><span>0%</span><span>Max ideal: 80%</span><span>100%</span></div>
       </div>
       <div style="margin-top:12px">
-        ${[["Saldo Awal","#2563eb",rpS(sA)],["+ Pemasukan","#059669",rp(tIn)],["– Pengeluaran","#dc2626",rp(tOut)],["= Saldo Akhir",sZ>=0?"#059669":"#dc2626",rpS(sZ)]].map(([l,c,v])=>`
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--surface2)">
-          <span style="font-size:12px;color:${c};font-weight:700">${l}</span>
+        ${[
+          ["Saldo Awal","#2563eb",rpS(sA),null],
+          ["+ Pemasukan","#059669",rp(tIn),"IN"],
+          ["– Pengeluaran","#dc2626",rp(tOut),"OUT"],
+          ["= Saldo Akhir",sZ>=0?"#059669":"#dc2626",rpS(sZ),null]
+        ].map(([l,c,v,t])=>`
+        <div class="clickable" style="display:flex;justify-content:space-between;padding:6px 6px;border-bottom:1px solid var(--surface2);border-radius:6px" ${t?`onclick='showDetailTipe("${t}")'`:""}>
+          <span style="font-size:12px;color:${c};font-weight:700">${l}${t?` <span class="click-hint">↗</span>`:""}</span>
           <span style="font-size:13px;font-weight:800;color:${c};font-family:'JetBrains Mono',monospace">${v}</span>
         </div>`).join("")}
       </div>
     </div>
     <div class="card">
-      <div class="chd">Per Anggota Keluarga</div>
+      <div class="chd">Per Anggota Keluarga <span style="font-size:10px;font-weight:400;color:var(--muted)">— klik untuk detail</span></div>
       <div class="ucards" style="margin-bottom:14px">
-        ${uOut.slice(0,2).map(([no,v],i)=>`<div class="ucard" style="--c:${CLR[i+1]}"><div class="uname">${uname(no)}</div><div class="uamt" style="color:${CLR[i+1]}">${rp(v)}</div><div class="upct">${tOut>0?(v/tOut*100).toFixed(0):0}% dari total</div></div>`).join("")}
+        ${uOut.slice(0,2).map(([no,v],i)=>`
+          <div class="ucard clickable" style="--c:${CLR[i+1]}" onclick='showDetailUser("${no.replace(/'/g,"\\'")}","OUT")'>
+            <div class="uname">${uname(no)} <span class="click-hint">↗</span></div>
+            <div class="uamt" style="color:${CLR[i+1]}">${rp(v)}</div>
+            <div class="upct">${tOut>0?(v/tOut*100).toFixed(0):0}% dari total</div>
+          </div>`).join("")}
       </div>
-      <div class="chd">Top Kelompok</div>
-      ${kd.slice(0,5).map(([n,v],i)=>`<div class="bi"><div class="bt"><div class="bn">${n}</div><div class="bv">${fmtK(v)}</div></div><div class="btr"><div class="bf" style="width:${kd[0][1]>0?(v/kd[0][1]*100).toFixed(0):0}%;background:${CLR[i+1]}"></div></div></div>`).join("")}
+      <div class="chd">Top Kelompok <span style="font-size:10px;font-weight:400;color:var(--muted)">— klik untuk detail</span></div>
+      ${kd.slice(0,5).map(([n,v],i)=>`
+        <div class="bi clickable" onclick='showDetailKelompok("${n.replace(/'/g,"\\'")}","OUT")'>
+          <div class="bt"><div class="bn">${n} <span class="click-hint">↗</span></div><div class="bv">${fmtK(v)}</div></div>
+          <div class="btr"><div class="bf" style="width:${kd[0][1]>0?(v/kd[0][1]*100).toFixed(0):0}%;background:${CLR[i+1]}"></div></div>
+        </div>`).join("")}
     </div>
   </div>
   <div class="g2">
     <div class="card"><div class="chd">Insight Otomatis</div>${buildIns(OUT,IN,tIn,tOut,sZ,rasio,kd)}</div>
-    <div class="card"><div class="chd">Kewajiban · Kebutuhan · Keinginan</div>${buildKKK(grp(OUT,"kelompok"),tOut)}</div>
+    <div class="card"><div class="chd">Kewajiban · Kebutuhan · Keinginan <span style="font-size:10px;font-weight:400;color:var(--muted)">— klik untuk detail</span></div>${buildKKK(grp(OUT,"kelompok"),tOut,OUT)}</div>
   </div>`;
 
   dc("c-bal");
   if(days.length) CHARTS["c-bal"]=new Chart(document.getElementById("c-bal"),{type:"line",data:{labels:days.map(d=>d.slice(5)),datasets:[{label:"Saldo",data:balLine,borderColor:"#059669",backgroundColor:"rgba(5,150,105,.07)",fill:true,tension:.4,pointRadius:3,borderWidth:2},{label:"Pemasukan",data:days.map(d=>dm[d].in),borderColor:"#2563eb",fill:false,tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[4,4]},{label:"Pengeluaran",data:days.map(d=>dm[d].out),borderColor:"#dc2626",fill:false,tension:.4,pointRadius:2,borderWidth:1.5,borderDash:[4,4]}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${rp(c.raw)}`}}},scales:{x:{grid:{color:"#f1f5f9"},ticks:{font:{size:11}}},y:{grid:{color:"#f1f5f9"},ticks:{callback:v=>fmtK(v),font:{size:11}}}}}});
 
   dc("c-pie");
-  if(kd.length) CHARTS["c-pie"]=new Chart(document.getElementById("c-pie"),{type:"doughnut",data:{labels:kd.map(([k])=>k),datasets:[{data:kd.map(([,v])=>v),backgroundColor:CLR.slice(1),borderWidth:0}]},options:{cutout:"55%",plugins:{legend:{position:"right",labels:{font:{size:11},padding:10}},tooltip:{callbacks:{label:c=>` ${c.label}: ${rp(c.raw)}`}}}}});
+  if(kd.length){
+    const chart = new Chart(document.getElementById("c-pie"),{type:"doughnut",data:{labels:kd.map(([k])=>k),datasets:[{data:kd.map(([,v])=>v),backgroundColor:CLR.slice(1),borderWidth:0}]},options:{cutout:"55%",plugins:{legend:{position:"right",labels:{font:{size:11},padding:10}},tooltip:{callbacks:{label:c=>` ${c.label}: ${rp(c.raw)}`}}},onClick:(evt,elements)=>{if(elements.length){const idx=elements[0].index;showDetailKelompok(kd[idx][0],"OUT");}}}});
+    CHARTS["c-pie"]=chart;
+  }
+}
+
+// ── DRILL-DOWN HELPERS ──
+// Cache filtered data for modal access
+let _curBD=[], _curOUT=[], _curIN=[];
+
+function render(){
+  const bd  = applyFilter();
+  const OUT = bd.filter(r=>r.tipe==="OUT");
+  const IN  = bd.filter(r=>r.tipe==="IN");
+  _curBD=bd; _curOUT=OUT; _curIN=IN;
+  const tIn = sum(IN), tOut=sum(OUT);
+  const sA  = saldoSebelum();
+  const sZ  = sA+tIn-tOut;
+  const rasio = tIn>0?parseFloat((tOut/tIn*100).toFixed(1)):0;
+  const periodLabel = FILTER.bulan!=="ALL"
+    ? BLN[+FILTER.bulan]+(FILTER.tahun!=="ALL"?" "+FILTER.tahun:"")
+    : (FILTER.tahun!=="ALL" ? "Tahun "+FILTER.tahun : "Semua Periode");
+  renderKPI(tIn,tOut,sA,sZ,rasio,IN.length,OUT.length);
+  renderOV(OUT,IN,tIn,tOut,sA,sZ,rasio,bd,periodLabel);
+  renderSP(OUT,tOut);
+  renderIC(IN,tIn);
+  renderAK(bd,periodLabel);
+  renderTX(bd,OUT,periodLabel);
+}
+
+function showDetailKelompok(kelompok, tipe){
+  const src = tipe==="IN" ? _curIN : _curOUT;
+  const rows = src.filter(r=>(r.kelompok||"Lainnya")===kelompok);
+  const total = rows.reduce((s,r)=>s+(parseFloat(r.jumlah)||0),0);
+  openModal(`${tipe==="IN"?"📥":"📤"} Kelompok: ${kelompok}`, `${rows.length} transaksi · Total ${rp(total)}`, rows, tipe==="IN"?"in":"out");
+}
+
+function showDetailKategori(kategori, tipe){
+  const src = tipe==="IN" ? _curIN : _curOUT;
+  const rows = src.filter(r=>(r.kategori||"Lainnya")===kategori);
+  const total = rows.reduce((s,r)=>s+(parseFloat(r.jumlah)||0),0);
+  openModal(`${tipe==="IN"?"📥":"📤"} Kategori: ${kategori}`, `${rows.length} transaksi · Total ${rp(total)}`, rows, tipe==="IN"?"in":"out");
+}
+
+function showDetailUser(nomor, tipe){
+  const src = tipe==="IN" ? _curIN : _curOUT;
+  const rows = src.filter(r=>String(r.nomor||"").replace(/[^0-9]/g,"")===String(nomor));
+  const total = rows.reduce((s,r)=>s+(parseFloat(r.jumlah)||0),0);
+  openModal(`👤 ${uname(nomor)}`, `${rows.length} transaksi · Total ${rp(total)}`, rows, tipe==="IN"?"in":"out");
+}
+
+function showDetailAkun(akun, scope){
+  const rows = (scope==="ALL" ? ALL : _curBD).filter(r=>(r.akun||"unknown").toLowerCase().trim()===akun && r.tipe!=="PINDAH");
+  const total = rows.reduce((s,r)=>s+(parseFloat(r.jumlah)||0)*(r.tipe==="IN"?1:-1),0);
+  openModal(`🏦 Akun: ${akun.toUpperCase()}`, `${rows.length} transaksi · Neto ${rpS(total)}`, rows, "neu");
+}
+
+function showDetailTipe(tipe){
+  const rows = tipe==="IN" ? _curIN : _curOUT;
+  const total = rows.reduce((s,r)=>s+(parseFloat(r.jumlah)||0),0);
+  openModal(tipe==="IN"?"💰 Semua Pemasukan":"💸 Semua Pengeluaran", `${rows.length} transaksi · Total ${rp(total)}`, rows, tipe==="IN"?"in":"out");
+}
+
+function showDetailSingle(r){
+  openModal(`🧾 ${r.keterangan||r.kategori||"Transaksi"}`, `${toDate(r.tanggal)?.toLocaleDateString("id-ID")||""} · ${r.akun?.toUpperCase()||""} · ${uname(r.nomor)}`, [r], r.tipe==="IN"?"in":"out");
 }
 
 function buildIns(OUT,IN,tIn,tOut,sZ,rasio,kd){
@@ -573,81 +930,37 @@ function buildIns(OUT,IN,tIn,tOut,sZ,rasio,kd){
   return tips.map(t=>`<div class="ins" style="--c:${t.c}">${t.t}</div>`).join("");
 }
 
-function buildKKK(gm,tot){
-  const kw=gm["Kewajiban"]||0;
-  const kb=(gm["Rumah Tangga"]||0)+(gm["Keluarga"]||0)+(gm["Transportasi"]||0)+(gm["Kesehatan"]||0);
-  const ki=Math.max(0,tot-kw-kb);
-  return[{l:"Kewajiban",d:"Cicilan & Hutang",v:kw,c:"#dc2626"},{l:"Kebutuhan",d:"RT, Keluarga, Transport, Kesehatan",v:kb,c:"#2563eb"},{l:"Keinginan",d:"Pribadi & Lainnya",v:ki,c:"#d97706"}]
-    .map(k=>`<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><div><div style="font-size:13px;font-weight:700;color:${k.c}">${k.l}</div><div style="font-size:11px;color:var(--muted)">${k.d}</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${k.c}">${fmtK(k.v)}</div><div style="font-size:11px;color:var(--muted)">${tot>0?(k.v/tot*100).toFixed(0):0}%</div></div></div><div class="btr" style="height:10px"><div class="bf" style="width:${tot>0?(k.v/tot*100).toFixed(0):0}%;background:${k.c};height:10px"></div></div></div>`).join("");
-}
-
-// ── SPENDING ──
-function renderSP(OUT,tot){
-  const cd=srt(grp(OUT,"kategori")).slice(0,12);
-  const kd=srt(grp(OUT,"kelompok"));
-  document.getElementById("p-sp").innerHTML=`
-  <div class="g2" style="margin-bottom:16px"><div class="card full"><div class="chd">Top Kategori Pengeluaran</div><canvas id="c-cat" height="78"></canvas></div></div>
-  <div class="g2">
-    <div class="card"><div class="chd">Per Kelompok</div>${kd.map(([n,v],i)=>`<div class="bi"><div class="bt"><div class="bn">${n}</div><div class="bv">${rp(v)} · <span style="color:var(--muted)">${tot>0?(v/tot*100).toFixed(0):0}%</span></div></div><div class="btr"><div class="bf" style="width:${tot>0?(v/tot*100).toFixed(0):0}%;background:${CLR[i%CLR.length]}"></div></div></div>`).join("")}</div>
-    <div class="card"><div class="chd">Per Kategori — Detail</div>${cd.map(([n,v],i)=>`<div class="bi"><div class="bt"><div class="bn" style="color:${CLR[i%CLR.length]}">${n}</div><div class="bv">${rp(v)}</div></div><div class="btr"><div class="bf" style="width:${cd[0][1]>0?(v/cd[0][1]*100).toFixed(0):0}%;background:${CLR[i%CLR.length]}"></div></div></div>`).join("")}</div>
-  </div>`;
-  dc("c-cat");
-  if(cd.length) CHARTS["c-cat"]=new Chart(document.getElementById("c-cat"),{type:"bar",data:{labels:cd.map(([k])=>k),datasets:[{data:cd.map(([,v])=>v),backgroundColor:cd.map((_,i)=>CLR[i%CLR.length]),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>rp(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:"#f1f5f9"},ticks:{callback:v=>fmtK(v),font:{size:11}}}}}});
-}
-
-// ── INCOME ──
-function renderIC(IN,tot){
-  const cd=srt(grp(IN,"kategori"));
-  document.getElementById("p-ic").innerHTML=`
-  <div class="g2">
-    <div class="card"><div class="chd">Sumber Pemasukan</div><canvas id="c-inc" height="220"></canvas></div>
-    <div class="card"><div class="chd">Detail Kategori</div>
-      ${cd.map(([n,v],i)=>`<div class="bi"><div class="bt"><div class="bn">${n}</div><div class="bv">${rp(v)} · <span style="color:var(--income)">${tot>0?(v/tot*100).toFixed(1):0}%</span></div></div><div class="btr"><div class="bf" style="width:${tot>0?(v/tot*100).toFixed(0):0}%;background:${CLR[i%CLR.length]}"></div></div></div>`).join("")}
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
-        <span style="font-weight:700;font-size:13px">Total</span>
-        <span style="font-weight:800;font-size:15px;color:var(--income);font-family:'JetBrains Mono',monospace">${rp(tot)}</span>
+function buildKKK(gm, tot, OUT){
+  const kw = gm["Kewajiban"]||0;
+  const kb = (gm["Rumah Tangga"]||0)+(gm["Keluarga"]||0)+(gm["Transportasi"]||0)+(gm["Kesehatan"]||0);
+  const ki = Math.max(0,tot-kw-kb);
+  const KW_GROUPS=["Kewajiban"], KB_GROUPS=["Rumah Tangga","Keluarga","Transportasi","Kesehatan"];
+  return [{l:"Kewajiban",d:"Cicilan & Hutang",v:kw,c:"#dc2626",g:KW_GROUPS},{l:"Kebutuhan",d:"RT, Keluarga, Transport, Kesehatan",v:kb,c:"#2563eb",g:KB_GROUPS},{l:"Keinginan",d:"Pribadi & Lainnya",v:ki,c:"#d97706",g:null}]
+    .map(k=>`<div class="clickable" style="margin-bottom:16px;padding:8px;border-radius:8px" onclick='showDetailKKK(${JSON.stringify(k.g)})'>
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${k.c}">${k.l} <span class="click-hint">↗</span></div>
+          <div style="font-size:11px;color:var(--muted)">${k.d}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:14px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${k.c}">${fmtK(k.v)}</div>
+          <div style="font-size:11px;color:var(--muted)">${tot>0?(k.v/tot*100).toFixed(0):0}%</div>
+        </div>
       </div>
-    </div>
-  </div>`;
-  dc("c-inc");
-  if(cd.length) CHARTS["c-inc"]=new Chart(document.getElementById("c-inc"),{type:"doughnut",data:{labels:cd.map(([k])=>k),datasets:[{data:cd.map(([,v])=>v),backgroundColor:CLR,borderWidth:0}]},options:{cutout:"60%",plugins:{legend:{position:"bottom",labels:{font:{size:12},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${rp(c.raw)} (${tot>0?(c.raw/tot*100).toFixed(1):0}%)`}}}}});
+      <div class="btr" style="height:10px"><div class="bf" style="width:${tot>0?(k.v/tot*100).toFixed(0):0}%;background:${k.c};height:10px"></div></div>
+    </div>`).join("");
 }
 
-// ── AKUN ──
-function renderAK(bd,periodLabel){
-  const sa=saldoAkun();
-  const aList=Object.entries(sa).filter(([k])=>!k.includes("→")).sort((a,b)=>b[1]-a[1]);
-  const aktB={};
-  bd.forEach(r=>{const ak=(r.akun||"unknown").toString().toLowerCase().trim();if(!aktB[ak])aktB[ak]={in:0,out:0,n:0};if(r.tipe==="IN"){aktB[ak].in+=parseFloat(r.jumlah)||0;aktB[ak].n++;}if(r.tipe==="OUT"){aktB[ak].out+=parseFloat(r.jumlah)||0;aktB[ak].n++;}});
-  const pindah=bd.filter(r=>r.tipe==="PINDAH");
-  document.getElementById("p-ak").innerHTML=`
-  <div class="g2" style="margin-bottom:16px"><div class="card full">
-    <div class="chd">Saldo Real per Akun (seluruh periode)</div>
-    <div class="agrid">${aList.map(([ak,sal])=>`<div class="acard"><div class="aname">${ak}</div><div class="aval ${sal>=0?"pos":"neg"}">${rpS(sal)}</div><div style="font-size:10px;color:var(--muted);margin-top:3px">${sal>=0?"✓ Positif":"⚠ Minus"}</div></div>`).join("")}</div>
-  </div></div>
-  <div class="g2">
-    <div class="card"><div class="chd">Aktivitas Akun — <span>${periodLabel}</span></div>
-      ${Object.entries(aktB).filter(([k])=>!k.includes("→")).map(([ak,v])=>`<div class="txr"><div class="txl"><div class="txd" style="background:var(--blue)"></div><div><div class="txn">${ak.toUpperCase()}</div><div class="txm">${v.n} transaksi bulan ini</div></div></div><div style="text-align:right"><div style="font-size:11px;color:var(--income);font-family:'JetBrains Mono',monospace">+${rp(v.in)}</div><div style="font-size:11px;color:var(--expense);font-family:'JetBrains Mono',monospace">-${rp(v.out)}</div></div></div>`).join("")}
-    </div>
-    <div class="card"><div class="chd">Transfer Antar Akun — <span>${periodLabel}</span></div>
-      <div class="txs">${pindah.length===0?`<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Tidak ada transfer bulan ini</div>`:pindah.map(r=>`<div class="txr"><div class="txl"><div class="txd" style="background:var(--blue)"></div><div><div class="txn">🔁 ${r.kategori||r.akun}</div><div class="txm">${toDate(r.tanggal)?.toLocaleDateString("id-ID")||""} · ${r.keterangan||""}</div></div></div><div class="txa p">${rp(r.jumlah)}</div></div>`).join("")}</div>
-    </div>
-  </div>`;
-}
-
-// ── TRANSAKSI ──
-function renderTX(bd,OUT,periodLabel){
-  const all=[...bd].filter(r=>r.tipe!=="PINDAH").sort((a,b)=>{const da=toDate(a.tanggal),db=toDate(b.tanggal);return(db||0)-(da||0);});
-  const top8=[...OUT].sort((a,b)=>(parseFloat(b.jumlah)||0)-(parseFloat(a.jumlah)||0)).slice(0,8);
-  document.getElementById("p-tx").innerHTML=`
-  <div class="g2">
-    <div class="card"><div class="chd">8 Pengeluaran Terbesar — <span>${periodLabel||""}</span></div>
-      ${top8.map((r,i)=>`<div class="txr"><div class="txl"><div style="width:24px;height:24px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">#${i+1}</div><div><div class="txn">${r.keterangan||r.kategori}</div><div class="txm">${toDate(r.tanggal)?.toLocaleDateString("id-ID")||""} · ${r.kategori} · ${r.akun||""} · ${uname(r.nomor)}</div></div></div><div class="txa o">-${rp(r.jumlah)}</div></div>`).join("")}
-    </div>
-    <div class="card"><div class="chd">Semua Transaksi <span>(${all.length})</span></div>
-      <div class="txs">${all.map(r=>`<div class="txr"><div class="txl"><div class="txd" style="background:${r.tipe==="IN"?"var(--income)":"var(--expense)"}"></div><div><div class="txn">${r.keterangan||r.kategori}</div><div class="txm">${toDate(r.tanggal)?.toLocaleDateString("id-ID")||""} · ${r.kategori} · ${uname(r.nomor)}</div></div></div><div class="txa ${r.tipe==="IN"?"i":"o"}">${r.tipe==="IN"?"+":"-"}${rp(r.jumlah)}</div></div>`).join("")}</div>
-    </div>
-  </div>`;
+function showDetailKKK(groups){
+  let rows;
+  if(!groups){ // Keinginan = semua diluar kewajiban & kebutuhan
+    const known=["Kewajiban","Rumah Tangga","Keluarga","Transportasi","Kesehatan"];
+    rows = _curOUT.filter(r=>!known.includes(r.kelompok));
+  } else {
+    rows = _curOUT.filter(r=>groups.includes(r.kelompok||"Lainnya"));
+  }
+  const total = rows.reduce((s,r)=>s+(parseFloat(r.jumlah)||0),0);
+  openModal(`📊 Detail Pengeluaran`, `${rows.length} transaksi · Total ${rp(total)}`, rows, "out");
 }
 
 // ── TAB ──
